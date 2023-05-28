@@ -1,28 +1,27 @@
 local utils = require "astronvim.utils"
+local get_icon = utils.get_icon
 local is_available = utils.is_available
 local ui = require "astronvim.utils.ui"
 
 local maps = { i = {}, n = {}, v = {}, t = {} }
 
 local sections = {
-  f = { name = "󰍉 Find" },
-  p = { name = "󰏖 Packages" },
-  l = { name = " LSP" },
-  u = { name = " UI" },
-  b = { name = "󰓩 Buffers" },
-  d = { name = " Debugger" },
-  g = { name = " Git" },
-  S = { name = "󱂬 Session" },
-  t = { name = " Terminal" },
+  f = { desc = get_icon("Search", 1, true) .. "Find" },
+  p = { desc = get_icon("Package", 1, true) .. "Packages" },
+  l = { desc = get_icon("ActiveLSP", 1, true) .. "LSP" },
+  u = { desc = get_icon("Window", 1, true) .. "UI" },
+  b = { desc = get_icon("Tab", 1, true) .. "Buffers" },
+  bs = { desc = get_icon("Sort", 1, true) .. "Sort Buffers" },
+  d = { desc = get_icon("Debugger", 1, true) .. "Debugger" },
+  g = { desc = get_icon("Git", 1, true) .. "Git" },
+  S = { desc = get_icon("Session", 1, true) .. "Session" },
+  t = { desc = get_icon("Terminal", 1, true) .. "Terminal" },
 }
-if not vim.g.icons_enabled then vim.tbl_map(function(opts) opts.name = opts.name:gsub("^.* ", "") end, sections) end
 
 -- Normal --
 -- Standard Operations
-maps.n["j"] = { "v:count ? 'j' : 'gj'", expr = true, desc = "Move cursor down" }
-maps.n["k"] = { "v:count ? 'k' : 'gk'", expr = true, desc = "Move cursor up" }
-maps.v["j"] = maps.n.j
-maps.v["k"] = maps.n.k
+maps.n["j"] = { "v:count == 0 ? 'gj' : 'j'", expr = true, desc = "Move cursor down" }
+maps.n["k"] = { "v:count == 0 ? 'gk' : 'k'", expr = true, desc = "Move cursor up" }
 maps.n["<leader>w"] = { "<cmd>w<cr>", desc = "Save" }
 maps.n["<leader>q"] = { "<cmd>confirm q<cr>", desc = "Quit" }
 maps.n["<leader>n"] = { "<cmd>enew<cr>", desc = "New File" }
@@ -82,6 +81,21 @@ maps.n["<leader>bd"] = {
   end,
   desc = "Delete buffer from tabline",
 }
+maps.n["<leader>bl"] =
+  { function() require("astronvim.utils.buffer").close_left() end, desc = "Close all buffers to the left" }
+maps.n["<leader>br"] =
+  { function() require("astronvim.utils.buffer").close_right() end, desc = "Close all buffers to the right" }
+maps.n["<leader>bs"] = sections.bs
+maps.n["<leader>bse"] =
+  { function() require("astronvim.utils.buffer").sort "extension" end, desc = "Sort by extension (buffers)" }
+maps.n["<leader>bsr"] =
+  { function() require("astronvim.utils.buffer").sort "unique_path" end, desc = "Sort by relative path (buffers)" }
+maps.n["<leader>bsp"] =
+  { function() require("astronvim.utils.buffer").sort "full_path" end, desc = "Sort by full path (buffers)" }
+maps.n["<leader>bsi"] =
+  { function() require("astronvim.utils.buffer").sort "bufnr" end, desc = "Sort by buffer number (buffers)" }
+maps.n["<leader>bsm"] =
+  { function() require("astronvim.utils.buffer").sort "modified" end, desc = "Sort by modification (buffers)" }
 maps.n["<leader>b\\"] = {
   function()
     require("astronvim.utils.status").heirline.buffer_picker(function(bufnr)
@@ -135,6 +149,7 @@ if is_available "gitsigns.nvim" then
   maps.n["]g"] = { function() require("gitsigns").next_hunk() end, desc = "Next Git hunk" }
   maps.n["[g"] = { function() require("gitsigns").prev_hunk() end, desc = "Previous Git hunk" }
   maps.n["<leader>gl"] = { function() require("gitsigns").blame_line() end, desc = "View Git blame" }
+  maps.n["<leader>gL"] = { function() require("gitsigns").blame_line { full = true } end, desc = "View full Git blame" }
   maps.n["<leader>gp"] = { function() require("gitsigns").preview_hunk() end, desc = "Preview Git hunk" }
   maps.n["<leader>gh"] = { function() require("gitsigns").reset_hunk() end, desc = "Reset Git hunk" }
   maps.n["<leader>gr"] = { function() require("gitsigns").reset_buffer() end, desc = "Reset Git buffer" }
@@ -168,6 +183,18 @@ if is_available "neovim-session-manager" then
   maps.n["<leader>Sf"] = { "<cmd>SessionManager! load_session<cr>", desc = "Search sessions" }
   maps.n["<leader>S."] =
     { "<cmd>SessionManager! load_current_dir_session<cr>", desc = "Load current directory session" }
+end
+if is_available "resession.nvim" then
+  maps.n["<leader>S"] = sections.S
+  maps.n["<leader>Sl"] = { function() require("resession").load "Last Session" end, desc = "Load last session" }
+  maps.n["<leader>Ss"] = { function() require("resession").save() end, desc = "Save this session" }
+  maps.n["<leader>St"] = { function() require("resession").save_tab() end, desc = "Save this tab's session" }
+  maps.n["<leader>Sd"] = { function() require("resession").delete() end, desc = "Delete a session" }
+  maps.n["<leader>Sf"] = { function() require("resession").load() end, desc = "Load a session" }
+  maps.n["<leader>S."] = {
+    function() require("resession").load(vim.fn.getcwd(), { dir = "dirsession" }) end,
+    desc = "Load current directory session",
+  }
 end
 
 -- Package Manager
@@ -221,7 +248,7 @@ if is_available "telescope.nvim" then
         if vim.fn.isdirectory(dir) == 1 then table.insert(search_dirs, dir) end -- add directory to search if exists
       end
       if vim.tbl_isempty(search_dirs) then -- if no config folders found, show warning
-        utils.notify("No user configuration files found", "warn")
+        utils.notify("No user configuration files found", vim.log.levels.WARN)
       else
         if #search_dirs == 1 then cwd = search_dirs[1] end -- if only one directory, focus cwd
         require("telescope.builtin").find_files {
@@ -301,16 +328,25 @@ if is_available "toggleterm.nvim" then
   maps.n["<leader>tv"] = { "<cmd>ToggleTerm size=80 direction=vertical<cr>", desc = "ToggleTerm vertical split" }
   maps.n["<F7>"] = { "<cmd>ToggleTerm<cr>", desc = "Toggle terminal" }
   maps.t["<F7>"] = maps.n["<F7>"]
-  maps.n["<C-'>"] = maps.n["<F7>"]
-  maps.t["<C-'>"] = maps.n["<F7>"]
+  maps.n["<C-'>"] = maps.n["<F7>"] -- requires terminal that supports binding <C-'>
+  maps.t["<C-'>"] = maps.n["<F7>"] -- requires terminal that supports binding <C-'>
 end
 
 if is_available "nvim-dap" then
   maps.n["<leader>d"] = sections.d
+  maps.v["<leader>d"] = sections.d
   -- modified function keys found with `showkey -a` in the terminal to get key code
   -- run `nvim -V3log +quit` and search through the "Terminal info" in the `log` file for the correct keyname
   maps.n["<F5>"] = { function() require("dap").continue() end, desc = "Debugger: Start" }
   maps.n["<F17>"] = { function() require("dap").terminate() end, desc = "Debugger: Stop" } -- Shift+F5
+  maps.n["<F21>"] = {
+    function()
+      vim.ui.input({ prompt = "Condition: " }, function(condition)
+        if condition then require("dap").set_breakpoint(condition) end
+      end)
+    end,
+    desc = "Debugger: Conditional Breakpoint",
+  }
   maps.n["<F29>"] = { function() require("dap").restart_frame() end, desc = "Debugger: Restart" } -- Control+F5
   maps.n["<F6>"] = { function() require("dap").pause() end, desc = "Debugger: Pause" }
   maps.n["<F9>"] = { function() require("dap").toggle_breakpoint() end, desc = "Debugger: Toggle Breakpoint" }
@@ -320,6 +356,14 @@ if is_available "nvim-dap" then
   maps.n["<leader>db"] = { function() require("dap").toggle_breakpoint() end, desc = "Toggle Breakpoint (F9)" }
   maps.n["<leader>dB"] = { function() require("dap").clear_breakpoints() end, desc = "Clear Breakpoints" }
   maps.n["<leader>dc"] = { function() require("dap").continue() end, desc = "Start/Continue (F5)" }
+  maps.n["<leader>dC"] = {
+    function()
+      vim.ui.input({ prompt = "Condition: " }, function(condition)
+        if condition then require("dap").set_breakpoint(condition) end
+      end)
+    end,
+    desc = "Conditional Breakpoint (S-F9)",
+  }
   maps.n["<leader>di"] = { function() require("dap").step_into() end, desc = "Step Into (F11)" }
   maps.n["<leader>do"] = { function() require("dap").step_over() end, desc = "Step Over (F10)" }
   maps.n["<leader>dO"] = { function() require("dap").step_out() end, desc = "Step Out (S-F11)" }
@@ -328,7 +372,18 @@ if is_available "nvim-dap" then
   maps.n["<leader>dp"] = { function() require("dap").pause() end, desc = "Pause (F6)" }
   maps.n["<leader>dr"] = { function() require("dap").restart_frame() end, desc = "Restart (C-F5)" }
   maps.n["<leader>dR"] = { function() require("dap").repl.toggle() end, desc = "Toggle REPL" }
+  maps.n["<leader>ds"] = { function() require("dap").run_to_cursor() end, desc = "Run To Cursor" }
+
   if is_available "nvim-dap-ui" then
+    maps.n["<leader>dE"] = {
+      function()
+        vim.ui.input({ prompt = "Expression: " }, function(expr)
+          if expr then require("dapui").eval(expr) end
+        end)
+      end,
+      desc = "Evaluate Input",
+    }
+    maps.v["<leader>dE"] = { function() require("dapui").eval() end, desc = "Evaluate Input" }
     maps.n["<leader>du"] = { function() require("dapui").toggle() end, desc = "Toggle Debugger UI" }
     maps.n["<leader>dh"] = { function() require("dap.ui.widgets").hover() end, desc = "Debugger Hover" }
   end
@@ -365,7 +420,7 @@ maps.n["<leader>ud"] = { ui.toggle_diagnostics, desc = "Toggle diagnostics" }
 maps.n["<leader>ug"] = { ui.toggle_signcolumn, desc = "Toggle signcolumn" }
 maps.n["<leader>ui"] = { ui.set_indent, desc = "Change indent setting" }
 maps.n["<leader>ul"] = { ui.toggle_statusline, desc = "Toggle statusline" }
-maps.n["<leader>uL"] = { ui.toggle_codelens, desc = "Toggle CodeLens refresh" }
+maps.n["<leader>uL"] = { ui.toggle_codelens, desc = "Toggle CodeLens" }
 maps.n["<leader>un"] = { ui.change_number, desc = "Change line numbering" }
 maps.n["<leader>uN"] = { ui.toggle_ui_notifications, desc = "Toggle UI notifications" }
 maps.n["<leader>up"] = { ui.toggle_paste, desc = "Toggle paste mode" }
@@ -375,5 +430,6 @@ maps.n["<leader>ut"] = { ui.toggle_tabline, desc = "Toggle tabline" }
 maps.n["<leader>uu"] = { ui.toggle_url_match, desc = "Toggle URL highlight" }
 maps.n["<leader>uw"] = { ui.toggle_wrap, desc = "Toggle wrap" }
 maps.n["<leader>uy"] = { ui.toggle_syntax, desc = "Toggle syntax highlight" }
+maps.n["<leader>uh"] = { ui.toggle_foldcolumn, desc = "Toggle foldcolumn" }
 
 utils.set_mappings(astronvim.user_opts("mappings", maps))

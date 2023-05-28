@@ -84,6 +84,8 @@ AstroNvim is an aesthetic and feature-rich neovim config that is extensible and 
 
 ## 🛠️ Installation
 
+### Linux/Mac OS (Unix)
+
 #### Make a backup of your current nvim and shared folder
 
 ```shell
@@ -95,6 +97,22 @@ mv ~/.local/share/nvim ~/.local/share/nvim.bak
 
 ```shell
 git clone --depth 1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
+nvim
+```
+
+### Windows (Powershell)
+
+#### Make a backup of your current nvim and nvim-data folder
+
+```pwsh
+Rename-Item -Path $env:LOCALAPPDATA\nvim -NewName $env:LOCALAPPDATA\nvim.bak
+Rename-Item -Path $env:LOCALAPPDATA\nvim-data -NewName $env:LOCALAPPDATA\nvim-data.bak
+```
+
+#### Clone the repository
+
+```pwsh
+git clone --depth 1 https://github.com/AstroNvim/AstroNvim $env:LOCALAPPDATA\nvim
 nvim
 ```
 
@@ -147,8 +165,9 @@ Run `:AstroUpdatePackages` (`<leader>pa`) to update both Neovim plugins and Maso
 
 There have been some great review videos released by members of the community! Here are a few:
 
-- [Why I'm quitting VIM by Carlos Mafla](https://www.youtube.com/watch?v=71GDopdc9rw) (Content By: [@gigo6000](https://github.com/gigo6000))
-- [Astro Vim - All in one Nvim config!! by John McBride](https://www.youtube.com/watch?v=JQLZ7NJRTEo) (Content By: [@jpmcb](https://github.com/jpmcb))
+- [Neovim With AstroNvim | Your New Advanced Development Editor](https://www.youtube.com/watch?v=GEHPiZ10gOk) (Version: 3, Content By: [@Cretezy](https://github.com/Cretezy))
+- [Why I'm quitting VIM by Carlos Mafla](https://www.youtube.com/watch?v=71GDopdc9rw) (Version: 2, Content By: [@gigo6000](https://github.com/gigo6000))
+- [Astro Vim - All in one Nvim config!! by John McBride](https://www.youtube.com/watch?v=JQLZ7NJRTEo) (Version: 1, Content By: [@jpmcb](https://github.com/jpmcb))
 
 ## 🚀 Contributing
 
